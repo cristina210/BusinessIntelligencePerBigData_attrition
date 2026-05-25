@@ -23,8 +23,8 @@ random_seed = 42
 # 1. CARICAMENTO DEI DATASET 
 # =============================================================================
 
-train_with_label = pd.read_excel('C:/Users/criba/OneDrive/Desktop/BusinessIntelligencePersonal/materiale_attrition/attrition_train.xlsx')
-test_with_label  = pd.read_excel('C:/Users/criba/OneDrive/Desktop/BusinessIntelligencePersonal/materiale_attrition/attrition_test.xlsx')
+train_with_label = pd.read_excel('materiale_attrition/attrition_train.xlsx')
+test_with_label  = pd.read_excel('materiale_attrition/attrition_test.xlsx')
 
 # Separazione feature / target
 # X_train: tutto tranne 'Attrition' (le variabili che il modello usa per imparare)
