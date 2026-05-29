@@ -1,0 +1,6 @@
+Non esiste una combinazione di rimozione che migliori tutti i modelli contemporaneamente. Guardando la media F1 escludendo k-NN:
+- La rimozione di HourlyRate è l'unica rimozione singola che migliora la media generale senza danneggiare nessun modello in modo significativo.
+- Tenure_Instability è dannosa da rimuovere: la sua assenza fa crollare DT e MLP. Nel Naive Bayes appare come la 3^ feature più importante mentre nel Random Forest come il secondo attributo più influente.
+- OverTime è praticamente ininfluente. Essa infatti ha pesi bassi nei modelli
+- Engagement_Score: rimuoverla peggiora leggermente quasi tutti i modelli.
+DECISIONE: si rimuove solo HourlyRate

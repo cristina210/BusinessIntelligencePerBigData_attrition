@@ -1,0 +1,30 @@
+Studio delle colonne coinvolte nei vincoli logici — years_cols: ['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']
+Combinazioni totali: 32 — Valide (senza violazioni): 14
+==============================================================================================================
+
+Rimosse                                                       F1_DT  F1_RF  F1_kNN  F1_NB  F1_SVM  F1_MLP    N
+--------------------------------------------------------------------------------------------------------------
+['TotalWorkingYears', 'YearsAtCompany']                       0.256  0.239   0.047  0.259   0.169   0.114   49
+['YearsAtCompany', 'Age']                                     0.241  0.222   0.045  0.259   0.163   0.057   49
+['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion']  0.197  0.261   0.048  0.259   0.165   0.054   48
+['TotalWorkingYears', 'YearsAtCompany', 'YearsWithCurrManager']  0.254  0.222   0.049  0.259   0.169   0.150   48
+['TotalWorkingYears', 'YearsAtCompany', 'Age']                0.254  0.229   0.044  0.259   0.165   0.065   48
+['TotalWorkingYears', 'YearsSinceLastPromotion', 'YearsWithCurrManager']  0.197  0.261   0.049  0.259   0.150   0.061   48
+['YearsAtCompany', 'YearsSinceLastPromotion', 'Age']          0.233  0.229   0.045  0.259   0.167   0.143   48
+['YearsAtCompany', 'YearsWithCurrManager', 'Age']             0.254  0.237   0.045  0.259   0.165   0.118   48
+['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager']  0.197  0.264   0.095  0.259   0.167   0.057   47
+['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'Age']  0.233  0.259   0.044  0.259   0.165   0.118   47
+['TotalWorkingYears', 'YearsAtCompany', 'YearsWithCurrManager', 'Age']  0.254  0.256   0.048  0.259   0.165   0.114   47
+['TotalWorkingYears', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']  0.233  0.248   0.051  0.259   0.171   0.105   47
+['YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']  0.233  0.308   0.047  0.259   0.167   0.057   47
+['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']  0.233  0.162   0.047  0.259   0.165   0.121   46
+
+==============================================================================================================
+MIGLIOR CONFIGURAZIONE PER MODELLO
+==============================================================================================================
+F1 DT  : ['TotalWorkingYears', 'YearsAtCompany']                       ->  F1=0.2564
+F1 RF  : ['YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']  ->  F1=0.3077
+F1 kNN : ['TotalWorkingYears', 'YearsAtCompany', 'YearsSinceLastPromotion', 'YearsWithCurrManager']  ->  F1=0.0952
+F1 NB  : ['TotalWorkingYears', 'YearsAtCompany']                       ->  F1=0.2593
+F1 SVM : ['TotalWorkingYears', 'YearsSinceLastPromotion', 'YearsWithCurrManager', 'Age']  ->  F1=0.1707
+F1 MLP : ['TotalWorkingYears', 'YearsAtCompany', 'YearsWithCurrManager']  ->  F1=0.1500

@@ -1,0 +1,6 @@
+Tra le 14 combinazioni valide, la configurazione rimozione di `['TotalWorkingYears', 'YearsAtCompany']`
+risulta la più equilibrata: produce il miglior F1 per DT (0.256) e SVM (0.169),
+il miglior MLP (0.114) e NB stabile a 0.259. L'unico modello che beneficerebbe
+di una configurazione diversa è RF, che raggiunge F1=0.308 rimuovendo Age al posto
+di TotalWorkingYears.
+Si mantengono quindi `Age`, `YearsSinceLastPromotion` e `YearsWithCurrManager`.

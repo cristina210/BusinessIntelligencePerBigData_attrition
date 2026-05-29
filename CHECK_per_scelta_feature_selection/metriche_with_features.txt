@@ -1,0 +1,70 @@
+Studio feature selection — candidate_cols: ['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']
+====================================================================================================
+
+Rimosse                                             F1_DT  F1_RF  F1_kNN  F1_NB  F1_SVM  F1_MLP   
+----------------------------------------------------------------------------------------------------
+[] (nessuna rimossa)                                0.256  0.256   0.047  0.273   0.169   0.114   
+['Engagement_Score']                                0.254  0.244   0.047  0.271   0.169   0.111   
+['Tenure_Instability']                              0.190  0.244   0.045  0.271   0.169   0.054   
+['HourlyRate']                                      0.256  0.296   0.047  0.273   0.169   0.105   
+['DailyRate']                                       0.202  0.283   0.047  0.273   0.169   0.069   
+['OverTime']                                        0.256  0.256   0.047  0.273   0.169   0.114   
+['YearsSinceLastPromotion']                         0.197  0.262   0.045  0.275   0.165   0.054   
+['Engagement_Score', 'Tenure_Instability']          0.180  0.200   0.045  0.271   0.169   0.108   
+['Engagement_Score', 'HourlyRate']                  0.254  0.212   0.047  0.271   0.169   0.059   
+['Engagement_Score', 'DailyRate']                   0.167  0.212   0.047  0.271   0.169   0.065   
+['Engagement_Score', 'OverTime']                    0.254  0.244   0.047  0.271   0.169   0.111   
+['Engagement_Score', 'YearsSinceLastPromotion']     0.197  0.196   0.045  0.275   0.165   0.062   
+['Tenure_Instability', 'HourlyRate']                0.161  0.218   0.045  0.271   0.169   0.061   
+['Tenure_Instability', 'DailyRate']                 0.118  0.218   0.045  0.271   0.169   0.065   
+['Tenure_Instability', 'OverTime']                  0.190  0.244   0.045  0.271   0.169   0.054   
+['Tenure_Instability', 'YearsSinceLastPromotion']   0.253  0.167   0.044  0.271   0.165   0.059   
+['HourlyRate', 'DailyRate']                         0.202  0.256   0.045  0.273   0.167   0.118   
+['HourlyRate', 'OverTime']                          0.256  0.296   0.047  0.273   0.169   0.105   
+['HourlyRate', 'YearsSinceLastPromotion']           0.197  0.190   0.047  0.275   0.165   0.061   
+['DailyRate', 'OverTime']                           0.202  0.283   0.047  0.273   0.169   0.069   
+['DailyRate', 'YearsSinceLastPromotion']            0.200  0.190   0.047  0.275   0.165   0.129   
+['OverTime', 'YearsSinceLastPromotion']             0.197  0.262   0.045  0.275   0.165   0.054   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate']  0.180  0.214   0.044  0.271   0.169   0.154   
+['Engagement_Score', 'Tenure_Instability', 'DailyRate']  0.185  0.214   0.045  0.271   0.169   0.111   
+['Engagement_Score', 'Tenure_Instability', 'OverTime']  0.180  0.200   0.045  0.271   0.169   0.108   
+['Engagement_Score', 'Tenure_Instability', 'YearsSinceLastPromotion']  0.243  0.222   0.044  0.271   0.165   0.105   
+['Engagement_Score', 'HourlyRate', 'DailyRate']     0.167  0.198   0.045  0.271   0.169   0.150   
+['Engagement_Score', 'HourlyRate', 'OverTime']      0.254  0.212   0.047  0.271   0.169   0.059   
+['Engagement_Score', 'HourlyRate', 'YearsSinceLastPromotion']  0.197  0.193   0.047  0.275   0.165   0.111  
+['Engagement_Score', 'DailyRate', 'OverTime']       0.167  0.212   0.047  0.271   0.169   0.065   
+['Engagement_Score', 'DailyRate', 'YearsSinceLastPromotion']  0.167  0.193   0.047  0.275   0.165   0.182   
+['Engagement_Score', 'OverTime', 'YearsSinceLastPromotion']  0.197  0.196   0.045  0.275   0.165   0.062   
+['Tenure_Instability', 'HourlyRate', 'DailyRate']   0.118  0.171   0.044  0.271   0.169   0.171   
+['Tenure_Instability', 'HourlyRate', 'OverTime']    0.161  0.218   0.045  0.271   0.169   0.061   
+['Tenure_Instability', 'HourlyRate', 'YearsSinceLastPromotion']  0.253  0.203   0.045  0.271   0.165   0.162   
+['Tenure_Instability', 'DailyRate', 'OverTime']     0.118  0.218   0.045  0.271   0.169   0.065   
+['Tenure_Instability', 'DailyRate', 'YearsSinceLastPromotion']  0.253  0.203   0.045  0.271   0.165   0.111   
+['Tenure_Instability', 'OverTime', 'YearsSinceLastPromotion']  0.253  0.167   0.044  0.271   0.165   0.059   
+['HourlyRate', 'DailyRate', 'OverTime']             0.202  0.256   0.045  0.273   0.167   0.118   
+['HourlyRate', 'DailyRate', 'YearsSinceLastPromotion']  0.202  0.183   0.047  0.275   0.165   0.114   
+['HourlyRate', 'OverTime', 'YearsSinceLastPromotion']  0.197  0.190   0.047  0.275   0.165   0.061   
+['DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.200  0.190   0.047  0.275   0.165   0.129   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'DailyRate']  0.185  0.250   0.044  0.271   0.169   0.062   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'OverTime']  0.180  0.214   0.044  0.271   0.169   0.154   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'YearsSinceLastPromotion']  0.243  0.213   0.044  0.271   0.165   0.121   
+['Engagement_Score', 'Tenure_Instability', 'DailyRate', 'OverTime']  0.185  0.214   0.045  0.271   0.169   0.111   
+['Engagement_Score', 'Tenure_Instability', 'DailyRate', 'YearsSinceLastPromotion']  0.240  0.220   0.045  0.271   0.165   0.129   
+['Engagement_Score', 'Tenure_Instability', 'OverTime', 'YearsSinceLastPromotion']  0.243  0.222   0.044  0.271   0.165   0.105   
+['Engagement_Score', 'HourlyRate', 'DailyRate', 'OverTime']  0.167  0.198   0.045  0.271   0.169   0.150   
+['Engagement_Score', 'HourlyRate', 'DailyRate', 'YearsSinceLastPromotion']  0.164  0.286   0.047  0.275   0.165   0.118   
+['Engagement_Score', 'HourlyRate', 'OverTime', 'YearsSinceLastPromotion']  0.197  0.193   0.047  0.275   0.165   0.111   
+['Engagement_Score', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.167  0.193   0.047  0.275   0.165   0.182   
+['Tenure_Instability', 'HourlyRate', 'DailyRate', 'OverTime']  0.118  0.171   0.044  0.271   0.169   0.171   46
+['Tenure_Instability', 'HourlyRate', 'DailyRate', 'YearsSinceLastPromotion']  0.253  0.264   0.045  0.271   0.165   0.114   
+['Tenure_Instability', 'HourlyRate', 'OverTime', 'YearsSinceLastPromotion']  0.253  0.203   0.045  0.271   0.165   0.162   
+['Tenure_Instability', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.253  0.203   0.045  0.271   0.165   0.111   
+['HourlyRate', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.202  0.183   0.047  0.275   0.165   0.114   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'DailyRate', 'OverTime']  0.185  0.250   0.044  0.271   0.169   0.062   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'DailyRate', 'YearsSinceLastPromotion']  0.240  0.229   0.045  0.271   0.165   0.111  
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'OverTime', 'YearsSinceLastPromotion']  0.243  0.213   0.044  0.271   0.165   0.121  
+['Engagement_Score', 'Tenure_Instability', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.240  0.220   0.045  0.271   0.165   0.129   
+['Engagement_Score', 'HourlyRate', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.164  0.286   0.047  0.275   0.165   0.118   
+['Tenure_Instability', 'HourlyRate', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.253  0.264   0.045  0.271   0.165   0.114   
+['Engagement_Score', 'Tenure_Instability', 'HourlyRate', 'DailyRate', 'OverTime', 'YearsSinceLastPromotion']  0.240  0.229   0.045  0.271   0.165   0.111   
+
