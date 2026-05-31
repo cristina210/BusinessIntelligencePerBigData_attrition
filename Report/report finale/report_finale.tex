@@ -1,0 +1,274 @@
+\documentclass[lettersize,journal]{IEEEtran}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{url}
+
+\begin{document}
+
+\title{Employee Attrition Classification}
+
+\author{Business Intelligence per Big Data -- Politecnico di Torino, AA 2025--2026}
+
+\maketitle
+
+\begin{abstract}
+This report summarizes a binary classification workflow for employee attrition. The objective is to identify employees at risk of leaving the company, so that HR managers can prioritize retention actions before turnover occurs. The project starts from structured demographic and job-related data, performs data quality checks, preprocessing, feature engineering and imbalance handling, then compares six classifiers. Because the positive class is rare, the final model selection is based mainly on recall and F1-score for Attrition = 1 rather than on accuracy. On the held-out test set, the continuous feature representation dominates the discretized one for all models. The recommended model is Gaussian Naive Bayes with SMOTE inside cross-validation: it reaches the best F1-score among the tested models (0.296) and the highest recall for employees who leave (0.913), accepting a high false-positive rate that is coherent with a preventive HR screening use case.
+\end{abstract}
+
+\section{Introduction}
+Employee attrition is a relevant hidden cost for organizations: replacing a qualified worker requires recruiting, onboarding and training effort, and may also reduce productivity and team stability. The business objective of this project is to support retention decisions through a predictive model that classifies each employee as \emph{Rimasto} (Attrition = 0) or \emph{Uscito} (Attrition = 1).
+
+The available data consist of an original training set with 600 employees and a test set with 150 employees. The target distribution in the training set is strongly imbalanced: 507 employees are in class 0 and 93 in class 1, corresponding to an attrition rate of 15.5\%. The same imbalance appears in the test set used for final evaluation, with 127 class-0 and 23 class-1 cases. This makes raw accuracy potentially misleading: a model that predicts almost everyone as non-attrition can look accurate while missing the cases of business interest.
+
+The dataset contains demographic variables (e.g., age, gender and marital status), job and organizational variables (department, job role, job level, business travel, overtime), compensation variables (monthly income and salary hike), satisfaction scores, tenure indicators and derived measures such as \texttt{Engagement\_Score} and \texttt{Tenure\_Instability}. The full workflow was implemented in Python and evaluated with a fixed random seed equal to 42.
+
+\begin{table}[t]
+\caption{Dataset summary before and after preparation.}
+\label{tab:dataset}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccc}
+\toprule
+Dataset & Rows & Predictors & Attrition = 1 \\
+\midrule
+Original train & 600 & 32 & 93 (15.5\%) \\
+Original test  & 150 & 32 & 23 (15.3\%) \\
+Prepared continuous train & 600 & 48 & 93 \\
+Prepared continuous test  & 150 & 48 & 23 \\
+Prepared discretized train & 600 & 48 & 93 \\
+Prepared discretized test  & 150 & 48 & 23 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Data Analysis and Preparation}
+The first preprocessing step removes \texttt{Random\_Survey\_Noise}, which is an explicit noise marker and not an informative HR feature. Missing values are present only in \texttt{Engagement\_Score}: 108 missing values in the training set and 27 in the test set, both equal to 18\% of the corresponding dataset. The distribution is approximately symmetric and without evident extreme values, so the missing values are imputed with the mean computed on the training data and then applied to both train and test.
+
+No duplicate rows are found. Logical consistency checks identify several temporal violations: 8 rows violate \texttt{TotalWorkingYears > Age}, 199 violate \texttt{YearsAtCompany > TotalWorkingYears}, 109 violate \texttt{YearsSinceLastPromotion > YearsAtCompany}, and 181 violate \texttt{YearsWithCurrManager > YearsAtCompany}. Overall, 402 training rows have at least one violation. The violations mainly concern temporal seniority variables, where the internal ordering of total experience, company tenure, current role and promotion history is not always plausible. This is a relevant data-quality issue because these attributes are highly interpretable in an HR context: using them blindly could make the model learn inconsistent career trajectories rather than real attrition signals.
+
+Removing all inconsistent rows would discard 67.0\% of the training data, so the adopted solution is column-based. The notebook tests several valid combinations of removals and selects \texttt{TotalWorkingYears} and \texttt{YearsAtCompany} as the most balanced correction. These two variables are the main sources of constraint violations and their removal does not degrade model performance in a generalized way. Conversely, \texttt{Age}, \texttt{YearsSinceLastPromotion} and \texttt{YearsWithCurrManager} are preserved because they keep useful information about career phase, stagnation and manager relationship.
+
+Outlier analysis is performed from three perspectives. The univariate IQR method flags 153 rows (25.5\%), mainly on variables such as \texttt{DistanceFromHome}, \texttt{MonthlyIncome}, \texttt{YearsSinceLastPromotion}, \texttt{Engagement\_Score} and \texttt{Tenure\_Instability}. Mahalanobis distance on selected bivariate relationships flags 99 unique rows (16.5\%), capturing anomalous combinations such as salary versus job level, income versus age, instability versus promotion history and engagement versus satisfaction. Finally, DBSCAN with Gower distance, which can work on mixed numerical and categorical data, flags 30 multivariate noise points (5.0\%).
+
+The three techniques do not have the same meaning. IQR finds marginal extremes, Mahalanobis finds unusual two-variable profiles, and DBSCAN detects points that are isolated in the global mixed-feature space. A conservative intersection rule would identify 11 stronger candidates, but the final decision is to keep outliers. The notebook comparison shows that removing them does not improve performance globally: Random Forest and MLP lose useful signal, while only SVM benefits clearly from removal. In an HR context, extreme cases may correspond to precisely the profiles of interest, for instance employees with unusual income, promotion or tenure patterns. Therefore the risk of deleting informative minority-class examples is higher than the benefit of obtaining a cleaner distribution.
+
+Feature selection combines correlation analysis, PCA, feature-importance checks and an ablation study. Numeric correlations with attrition are weak, all between about -0.08 and +0.09; categorical variables show only mild signals for business travel and job role. \texttt{Engagement\_Score} is partially reconstructable from satisfaction variables ($R^2 = 0.7673$), and \texttt{Tenure\_Instability} is strongly correlated with a promotion-ratio proxy ($r = 0.9699$), but ablation shows that removing them hurts at least some models. The final feature selection removes only \texttt{HourlyRate}, in addition to the columns removed for noise and logical consistency.
+
+\begin{table}[t]
+\caption{Main data-quality findings and adopted decisions.}
+\label{tab:prep}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{p{0.25\columnwidth}p{0.34\columnwidth}p{0.31\columnwidth}}
+\toprule
+Issue & Evidence from notebook & Final decision \\
+\midrule
+Noise marker & \texttt{Random\_Survey\_Noise} is artificial survey noise. & Removed. \\
+Missing values & Only \texttt{Engagement\_Score}: 108 train and 27 test missing values. & Train mean imputation. \\
+Duplicates & No duplicated rows. & No row removed. \\
+Wrong data & 402 rows violate at least one temporal constraint. & Remove columns \texttt{TotalWorkingYears}, \texttt{YearsAtCompany}. \\
+Outliers & IQR: 153 rows; Mahalanobis: 99; DBSCAN: 30. & Kept, because removal does not improve models globally. \\
+Feature selection & Ablation on 64 subsets of six candidate features. & Remove only \texttt{HourlyRate}. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Logical temporal constraints checked on the training set.}
+\label{tab:constraints}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcc}
+\toprule
+Violated constraint & Rows & Share \\
+\midrule
+\texttt{TotalWorkingYears > Age} & 8 & 1.3\% \\
+\texttt{YearsAtCompany > TotalWorkingYears} & 199 & 33.2\% \\
+\texttt{YearsSinceLastPromotion > YearsAtCompany} & 109 & 18.2\% \\
+\texttt{YearsWithCurrManager > YearsAtCompany} & 181 & 30.2\% \\
+At least one violation & 402 & 67.0\% \\
+No violation & 198 & 33.0\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Outlier analysis summary on the training set.}
+\label{tab:outliers}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccp{0.32\columnwidth}}
+\toprule
+Method & Rows & Share & Interpretation \\
+\midrule
+IQR, univariate & 153 & 25.5\% & Marginal extremes on single numeric attributes. \\
+Mahalanobis, bivariate & 99 & 16.5\% & Unusual HR feature pairs. \\
+DBSCAN/Gower, multivariate & 30 & 5.0\% & Sparse mixed-feature profiles. \\
+DBSCAN + bivariate confirmation & 11 & 1.8\% & Stronger candidates, still kept. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Methodology}
+Two parallel representations are built. The continuous representation keeps the main numeric values after cleaning, one-hot encodes nominal variables and applies MinMax scaling to non-binary numeric variables. The discretized representation applies domain-driven binning to variables such as monthly income, age, distance from home, tenure instability and selected tenure indicators, then ordinally encodes the resulting bins. After preprocessing, both train and test matrices contain 48 predictors: 600 training rows and 150 test rows.
+
+Six supervised classifiers are evaluated: Decision Tree (DT), Random Forest (RF), k-Nearest Neighbors (kNN), Gaussian Naive Bayes (NB), Support Vector Machine (SVM) and Multi-Layer Perceptron (MLP). Hyperparameters are tuned with 5-fold StratifiedKFold cross-validation and F1-score as optimization metric. DT, RF and SVM use \texttt{class\_weight='balanced'} because this is natively supported. kNN, NB and MLP instead use SMOTE in an \texttt{imblearn} pipeline, so synthetic minority samples are generated only inside the training fold of each cross-validation split. This prevents data leakage: the test set is never oversampled.
+
+The best configurations found in the notebook are: DT with entropy and \texttt{max\_depth=6}; RF with \texttt{max\_depth=1} and 25 trees; kNN with Euclidean distance and $k=15$; NB with \texttt{var\_smoothing=1e-12}; SVM with linear kernel and $C=0.01$; MLP with two hidden layers of 50 neurons, ReLU activation and $\alpha=0.001$.
+
+\subsection{Classifiers}
+\textbf{Decision Tree.} DT recursively partitions the feature space by choosing splits that reduce class impurity. It is interpretable because the final model is a set of if-then rules. Its main risk is overfitting, controlled here by tuning the maximum depth.
+
+\textbf{Random Forest.} RF combines many decision trees trained on bootstrap samples and random subsets of variables. The majority vote usually reduces the variance of a single tree and improves robustness. The price is lower interpretability than a single DT.
+
+\textbf{k-Nearest Neighbors.} kNN assigns each employee to the majority class among the closest training observations. It is non-parametric and depends strongly on distance geometry, so scaling is essential. Since it has no native class weights, SMOTE is used in the training folds.
+
+\textbf{Gaussian Naive Bayes.} NB applies Bayes' theorem with conditional independence between features and Gaussian likelihoods for continuous variables. Although the independence assumption is strong, the model is fast and useful as a probabilistic baseline. In this project it is the most aggressive detector of the minority class.
+
+\textbf{Support Vector Machine.} SVM searches for the hyperplane with maximum margin between classes. The parameter $C$ controls the trade-off between margin width and classification errors. The selected linear SVM is conservative and misses many attrition cases.
+
+\textbf{Multi-Layer Perceptron.} MLP is a feed-forward neural network trained by backpropagation. It can model nonlinear relationships, but needs enough signal and data to avoid majority-class behavior. In this dataset it obtains high accuracy mainly by predicting employees as non-attrition.
+
+\begin{table}[t]
+\caption{Model setup selected by GridSearchCV.}
+\label{tab:setup}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lp{0.36\columnwidth}cp{0.23\columnwidth}}
+\toprule
+Model & Best parameters & CV F1 & Imbalance \\
+\midrule
+DT  & entropy, depth 6 & 0.254 & class weights \\
+RF  & 25 trees, depth 1 & 0.237 & class weights \\
+kNN & $k=15$, Euclidean & 0.294 & SMOTE \\
+NB  & smoothing $10^{-12}$ & 0.270 & SMOTE \\
+SVM & linear, $C=0.01$ & 0.214 & class weights \\
+MLP & (50,50), ReLU, $\alpha=0.001$ & 0.167 & SMOTE \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Experimental Results}
+Table~\ref{tab:model_results} reports the test-set performance for every algorithm on both representations. The positive class is \emph{Uscito}; therefore precision, recall and F1 refer to attrition employees. Accuracy is reported for completeness but is not the main decision criterion. Tables~\ref{tab:cm} and~\ref{tab:cm_discr} report the corresponding confusion matrices.
+
+\begin{table}[t]
+\caption{Per-model test comparison on continuous (C) and discretized (D) datasets.}
+\label{tab:model_results}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.5pt}
+\begin{tabular}{llccccc}
+\toprule
+Model & Data & Acc. & Prec. & Recall & F1 & AUC \\
+\midrule
+DT  & C & 0.420 & 0.160 & 0.652 & 0.256 & 0.536 \\
+    & D & 0.500 & 0.129 & 0.391 & 0.194 & 0.448 \\
+RF  & C & 0.520 & 0.164 & 0.522 & 0.250 & 0.534 \\
+    & D & 0.480 & 0.143 & 0.478 & 0.220 & 0.498 \\
+kNN & C & 0.427 & 0.182 & 0.783 & 0.295 & 0.595 \\
+    & D & 0.380 & 0.164 & 0.739 & 0.268 & 0.600 \\
+NB  & C & 0.333 & 0.176 & 0.913 & 0.296 & 0.545 \\
+    & D & 0.327 & 0.164 & 0.826 & 0.273 & 0.527 \\
+SVM & C & 0.540 & 0.117 & 0.304 & 0.169 & 0.588 \\
+    & D & 0.580 & 0.100 & 0.217 & 0.137 & 0.420 \\
+MLP & C & 0.800 & 0.231 & 0.130 & 0.167 & 0.560 \\
+    & D & 0.753 & 0.111 & 0.087 & 0.098 & 0.446 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Confusion matrices on the continuous test set. Rows are true classes and columns are predicted classes.}
+\label{tab:cm}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrr}
+\toprule
+Model & TN & FP & FN & TP \\
+\midrule
+DT  & 48  & 79 &  8 & 15 \\
+RF  & 66  & 61 & 11 & 12 \\
+kNN & 46  & 81 &  5 & 18 \\
+NB  & 29  & 98 &  2 & 21 \\
+SVM & 74  & 53 & 16 &  7 \\
+MLP & 117 & 10 & 20 &  3 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[t]
+\caption{Confusion matrices on the discretized test set. Rows are true classes and columns are predicted classes.}
+\label{tab:cm_discr}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lrrrr}
+\toprule
+Model & TN & FP & FN & TP \\
+\midrule
+DT  & 66  & 61 & 14 &  9 \\
+RF  & 61  & 66 & 12 & 11 \\
+kNN & 40  & 87 &  6 & 17 \\
+NB  & 30  & 97 &  4 & 19 \\
+SVM & 82  & 45 & 18 &  5 \\
+MLP & 111 & 16 & 21 &  2 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The comparison highlights a typical imbalance trade-off. MLP has the highest accuracy (0.800), but it detects only 3 of the 23 attrition cases, with recall equal to 0.130. This behavior is unsuitable for retention screening. NB has the opposite profile: it detects 21 of the 23 attrition cases, reaching recall 0.913, but produces many false positives (98 non-attrition employees incorrectly flagged). kNN is the closest competitor, with F1 equal to 0.295 and recall 0.783. Its AUC is also the highest among the continuous models (0.595), but its recall is lower than NB and its F1 is slightly below NB. Decision Tree and Random Forest occupy an intermediate region: they recover respectively 15 and 12 attrition cases, but their false-positive counts remain high. SVM is more conservative, while MLP is too conservative for the target class.
+
+The discretized representation is not selected. The notebook comparison reports lower F1 for every model: DT falls from 0.256 to 0.194, RF from 0.250 to 0.220, kNN from 0.295 to 0.268, NB from 0.296 to 0.273, SVM from 0.169 to 0.137, and MLP from 0.167 to 0.098. Discretization improves interpretability, but in this dataset the information loss dominates the benefit.
+
+\subsection{Model-level interpretation}
+Decision Tree is the most interpretable model among the competitive alternatives. Its first splits in the notebook involve \texttt{Tenure\_Instability}, \texttt{WorkLifeBalance}, \texttt{MonthlyIncome}, \texttt{DailyRate} and \texttt{YearsSinceLastPromotion}. This is useful for explanation, but the model generates 79 false positives on the continuous test set, so its rules are too broad for direct action.
+
+Random Forest does not improve the single tree as expected. The selected forest is intentionally shallow (\texttt{max\_depth=1}) and behaves like a set of weak screening rules. It slightly improves accuracy over DT but loses recall, identifying 12 of 23 attrition cases. In the outlier-removal experiments, RF also degraded strongly when extreme cases were removed, which supports the decision to keep outliers in the final dataset.
+
+kNN and Naive Bayes are the two most relevant models for the recall-oriented objective. kNN has the best AUC in the continuous setting and detects 18 attrition cases. NB detects 21 attrition cases and obtains the best F1, but it also flags 98 non-attrition employees. The preferred operational interpretation is therefore not ``NB is accurate'', but ``NB is the most aggressive early-warning model''. SVM and MLP are less appropriate because they miss most employees who actually leave.
+
+The feature-importance analysis is coherent with an HR interpretation. Aggregating normalized importance across models, the strongest drivers include \texttt{Tenure\_Instability}, \texttt{EducationField\_Medical}, \texttt{BusinessTravel\_Travel\_Rarely}, \texttt{MaritalStatus\_Single}, \texttt{NumCompaniesWorked}, \texttt{PercentSalaryHike}, \texttt{EducationField\_Life Sciences}, \texttt{JobRole\_Sales Executive}, \texttt{StockOptionLevel} and \texttt{YearsInCurrentRole}. These signals are weak individually, but together they help identify profiles where career stagnation, mobility, role and compensation-related variables should be monitored.
+
+\begin{table}[t]
+\caption{Top aggregated feature drivers. Score is the average normalized importance across the six models.}
+\label{tab:drivers}
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lcc}
+\toprule
+Feature & Score & Corr. with attrition \\
+\midrule
+\texttt{Tenure\_Instability} & 0.427 &  0.089 \\
+\texttt{EducationField\_Medical} & 0.413 & -0.028 \\
+\texttt{BusinessTravel\_Travel\_Rarely} & 0.407 &  0.047 \\
+\texttt{MaritalStatus\_Single} & 0.401 & -0.035 \\
+\texttt{NumCompaniesWorked} & 0.393 & -0.073 \\
+\texttt{PercentSalaryHike} & 0.389 &  0.084 \\
+\texttt{EducationField\_Life Sciences} & 0.384 & -0.030 \\
+\texttt{JobRole\_Sales Executive} & 0.355 & -0.022 \\
+\texttt{StockOptionLevel} & 0.354 & -0.047 \\
+\texttt{YearsInCurrentRole} & 0.310 & -0.027 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Conclusions}
+The final recommended configuration is Gaussian Naive Bayes on the continuous preprocessed dataset, with SMOTE applied only inside cross-validation. The choice is driven by the business goal: in employee retention, a false positive usually means an additional HR check, whereas a false negative means missing a potentially preventable resignation. For this reason, the high recall of NB is more valuable than the higher accuracy of MLP.
+
+Operationally, the model should not be used as an automatic decision system. Its precision is low, so it is better suited as a first-level screening tool that produces a prioritized watchlist for HR analysts. Employees flagged as at risk should then be reviewed together with contextual information, such as recent role changes, manager feedback, salary progression and engagement surveys. The most useful business rule is therefore conservative: use the classifier to maximize early detection, then let human review filter false alarms and define retention actions.
+
+\section{Contributions}
+The project workflow was organized around three main activities: data-quality analysis and preprocessing, experimental classification, and final business interpretation. The preprocessing activity covered missing-value treatment, logical consistency checks, outlier analysis, discretization design, encoding, scaling and feature-selection experiments. The classification activity implemented the six-model benchmark, hyperparameter tuning, imbalance handling with class weights or SMOTE, and evaluation on the untouched test set. The final analysis compared continuous and discretized representations, selected the recommended model and translated the feature-importance results into HR-oriented retention rules.
+
+\end{document}
